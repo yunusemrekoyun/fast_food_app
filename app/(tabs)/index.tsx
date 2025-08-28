@@ -2,6 +2,7 @@ import { images, offers } from "@/constants";
 import cn from "clsx";
 import { Fragment } from "react";
 import {
+  Button,
   FlatList,
   Image,
   Pressable,
