@@ -11,8 +11,6 @@ import React from "react";
 import { images } from "@/constants";
 
 import { Slot } from "expo-router";
-import CustomInput from "@/components/CustomInput";
-import CustomButton from "@/components/CustomButton";
 
 const _layout = () => {
   return (
@@ -38,17 +36,8 @@ const _layout = () => {
             className="self-center size-48 absolute -bottom-16 z-10"
           />
         </View>
-
-        <CustomInput
-          placeholder="Enter your e-mail"
-          value={""}
-          onChangeText={(text) => {}}
-          label="E-mail"
-          keyboardType="email-address"
-        />
-        <CustomButton />
+        <Slot />
       </ScrollView>
-      <Slot />
     </KeyboardAvoidingView>
   );
 };
