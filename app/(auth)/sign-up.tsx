@@ -3,21 +3,23 @@ import React, { useState } from "react";
 import { Link, router } from "expo-router";
 import CustomInput from "@/components/CustomInput";
 import CustomButton from "@/components/CustomButton";
+import { createUser } from "@/lib/appwrite";
 
 const SignUp = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setform] = useState({ name: "", email: "", password: "" });
 
   const submit = async () => {
-    if (!form.name || !form.email || !form.password)
+    const { name, email, password } = form;
+    if (!name || !email || !password)
       return Alert.alert("Error", "Please fill in all fields.");
 
     setIsSubmitting(true);
 
     try {
-      //call the api here
+      await createUser({ name, email, password });
 
-      Alert.alert("Success", "You have successfully signed up.");
+
       router.replace("/");
     } catch (error: any) {
       Alert.alert("Error", error.message || "Something went wrong.");
@@ -49,7 +51,7 @@ const SignUp = () => {
         label="Password"
         secureTextEntry={true}
       />
-      <CustomButton title="Sign In" isLoading={isSubmitting} onPress={submit} />
+      <CustomButton title="Sign Up" isLoading={isSubmitting} onPress={submit} />
       <View className="flex justify-center mt-5 flex-row gap-2">
         <Text className="base-regular text-gray-100">
           Already have an account?
