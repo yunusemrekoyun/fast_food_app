@@ -33,13 +33,10 @@ const { height } = Dimensions.get("window");
 
 const MenuDetailModal: React.FC<Props> = ({ visible, item, onClose }) => {
   const { addItem } = useCartStore();
+  const backdrop = useSharedValue(0);
+  const card = useSharedValue(0);
+  const dragY = useSharedValue(0);
 
-  // anim değerleri
-  const backdrop = useSharedValue(0); // 0→1
-  const card = useSharedValue(0); // 0→1
-  const dragY = useSharedValue(0); // pan close
-
-  // mount/unmount anim
   useEffect(() => {
     if (visible) {
       backdrop.value = withTiming(1, { duration: 160 });
@@ -52,29 +49,23 @@ const MenuDetailModal: React.FC<Props> = ({ visible, item, onClose }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
-  // backdrop anim stili
   const backdropStyle = useAnimatedStyle(() => ({
     opacity: interpolate(backdrop.value, [0, 1], [0, 1], Extrapolate.CLAMP),
   }));
 
-  // kart anim stili (fade + scale, hafif yukarı)
   const cardStyle = useAnimatedStyle(() => {
     const s = interpolate(card.value, [0, 1], [0.96, 1]);
-    const ty =
-      interpolate(card.value, [0, 1], [10, 0]) + // girişte 10px aşağıdan
-      dragY.value; // sürükleme
+    const ty = interpolate(card.value, [0, 1], [10, 0]) + dragY.value;
     return {
       transform: [{ translateY: ty }, { scale: s }],
       opacity: card.value,
     };
   });
 
-  // aşağı çekince kapat
   const onGestureEvent = (dy: number) => {
     dragY.value = Math.max(0, dy);
   };
   const onGestureEnd = () => {
-    // 80px’ten fazla çekildiyse kapat
     if (dragY.value > 80) {
       runOnJS(onClose)();
     } else {
@@ -107,10 +98,8 @@ const MenuDetailModal: React.FC<Props> = ({ visible, item, onClose }) => {
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      {/* StatusBar kontrastını düzeltelim */}
       <StatusBar barStyle="light-content" />
 
-      {/* BLUR + karartma */}
       <Animated.View
         style={[{ position: "absolute", inset: 0 }, backdropStyle]}
       >
@@ -119,7 +108,6 @@ const MenuDetailModal: React.FC<Props> = ({ visible, item, onClose }) => {
         </Pressable>
       </Animated.View>
 
-      {/* Orta Kart */}
       <View
         pointerEvents="box-none"
         style={{
@@ -146,7 +134,6 @@ const MenuDetailModal: React.FC<Props> = ({ visible, item, onClose }) => {
             cardStyle,
           ]}
         >
-          {/* “drag handle” */}
           <View style={{ alignItems: "center", marginTop: 4 }}>
             <View
               style={{
@@ -155,16 +142,14 @@ const MenuDetailModal: React.FC<Props> = ({ visible, item, onClose }) => {
                 borderRadius: 999,
                 backgroundColor: "#E6E6E8",
               }}
-              // basılı tutup hafif çekme hissi (basit bir onMove)
               onStartShouldSetResponder={() => true}
               onResponderMove={(e) =>
-                onGestureEvent(e.nativeEvent.locationY - 12 /* ~kaba offset */)
+                onGestureEvent(e.nativeEvent.locationY - 12)
               }
               onResponderRelease={onGestureEnd}
             />
           </View>
 
-          {/* görsel */}
           <View style={{ alignItems: "center", marginTop: 8 }}>
             <Image
               source={{ uri: item.image_url }}
@@ -175,7 +160,6 @@ const MenuDetailModal: React.FC<Props> = ({ visible, item, onClose }) => {
             />
           </View>
 
-          {/* başlık + fiyat */}
           <Text
             style={{
               fontSize: 22,
@@ -197,7 +181,6 @@ const MenuDetailModal: React.FC<Props> = ({ visible, item, onClose }) => {
             ${item.price.toFixed(2)}
           </Text>
 
-          {/* açıklama (varsa) */}
           {item.description ? (
             <Text
               style={{
@@ -212,7 +195,6 @@ const MenuDetailModal: React.FC<Props> = ({ visible, item, onClose }) => {
             </Text>
           ) : null}
 
-          {/* butonlar */}
           <View style={{ flexDirection: "row", gap: 12, marginTop: 16 }}>
             <Pressable
               onPress={onClose}

@@ -1,4 +1,3 @@
-// app/(auth)/sign-in.tsx
 import { View, Text, Alert } from "react-native";
 import React, { useState } from "react";
 import { Link, router } from "expo-router";
@@ -22,10 +21,8 @@ const SignIn = () => {
     try {
       await signIn({ email, password });
 
-      // Oturum açıldıktan hemen sonra global auth state'i tazele
       await fetchAuthenticatedUser();
 
-      // Artık Tabs'e gönderebiliriz
       router.replace("/");
     } catch (error: any) {
       Alert.alert("Error", error.message || "Something went wrong.");
