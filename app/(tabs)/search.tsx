@@ -3,14 +3,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import useAppwrite from "@/lib/useAppwrite";
 import { getCategories, getMenu } from "@/lib/appwrite";
 import { useLocalSearchParams } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import CartButton from "@/components/CartButton";
 import cn from "clsx";
 import MenuCard from "@/components/MenuCard";
 import { MenuItem } from "@/type";
-
 import Filter from "@/components/Filter";
 import SearchBar from "@/components/SearchBar";
+import MenuDetailModal from "@/components/MenuDetailModal";
 
 const Search = () => {
   const { category, query } = useLocalSearchParams<{
@@ -18,24 +18,31 @@ const Search = () => {
     category: string;
   }>();
 
-  const { data, refetch, loading } = useAppwrite({
+  const { data, refetch, loading } = useAppwrite<MenuItem[], any>({
     fn: getMenu,
     params: { category, query, limit: 6 },
   });
   const { data: categories } = useAppwrite({ fn: getCategories });
+
+  const [selected, setSelected] = useState<MenuItem | null>(null);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     refetch({ category, query, limit: 6 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, query]);
 
+  const openDetail = (item: MenuItem) => {
+    setSelected(item);
+    setOpen(true);
+  };
+
   return (
     <SafeAreaView className="bg-white h-full">
       <FlatList
-        data={data}
+        data={data || []}
         renderItem={({ item, index }) => {
           const isFirstRightColItem = index % 2 === 0;
-
           return (
             <View
               className={cn(
@@ -43,7 +50,10 @@ const Search = () => {
                 !isFirstRightColItem ? "mt-10" : "mt-0"
               )}
             >
-              <MenuCard item={item as MenuItem} />
+              <MenuCard
+                item={item as MenuItem}
+                onPress={() => openDetail(item as MenuItem)}
+              />
             </View>
           );
         }}
@@ -64,16 +74,19 @@ const Search = () => {
                   </Text>
                 </View>
               </View>
-
               <CartButton />
             </View>
-
             <SearchBar />
-
-            <Filter categories={categories!} />
+            <Filter categories={categories || []} />
           </View>
         )}
         ListEmptyComponent={() => !loading && <Text>No results</Text>}
+      />
+
+      <MenuDetailModal
+        visible={open}
+        item={selected}
+        onClose={() => setOpen(false)}
       />
     </SafeAreaView>
   );

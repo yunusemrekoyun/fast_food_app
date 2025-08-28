@@ -1,3 +1,4 @@
+// store/auth.store.ts
 import { create } from "zustand";
 import { User } from "@/type";
 import { getCurrentUser } from "@/lib/appwrite";
@@ -25,13 +26,16 @@ const useAuthStore = create<AuthState>((set) => ({
 
   fetchAuthenticatedUser: async () => {
     set({ isLoading: true });
-
     try {
       const user = await getCurrentUser();
-
-      //   if (user) set({ isAuthenticated: true, user: user as User });
-      if (user) set({ isAuthenticated: true, user: user as unknown as User });
-      else set({ isAuthenticated: false, user: null });
+      if (user) {
+        set({
+          isAuthenticated: true,
+          user: user as unknown as User,
+        });
+      } else {
+        set({ isAuthenticated: false, user: null });
+      }
     } catch (e) {
       console.log("fetchAuthenticatedUser error", e);
       set({ isAuthenticated: false, user: null });

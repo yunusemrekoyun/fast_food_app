@@ -1,3 +1,4 @@
+// app/(auth)/sign-in.tsx
 import { View, Text, Alert } from "react-native";
 import React, { useState } from "react";
 import { Link, router } from "expo-router";
@@ -5,10 +6,12 @@ import CustomInput from "@/components/CustomInput";
 import CustomButton from "@/components/CustomButton";
 import { signIn } from "@/lib/appwrite";
 import * as Sentry from "@sentry/react-native";
+import useAuthStore from "@/store/auth.store";
 
 const SignIn = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setform] = useState({ email: "", password: "" });
+  const { fetchAuthenticatedUser } = useAuthStore();
 
   const submit = async () => {
     const { email, password } = form;
@@ -16,10 +19,13 @@ const SignIn = () => {
       return Alert.alert("Error", "Please fill in all fields.");
 
     setIsSubmitting(true);
-
     try {
       await signIn({ email, password });
 
+      // Oturum açıldıktan hemen sonra global auth state'i tazele
+      await fetchAuthenticatedUser();
+
+      // Artık Tabs'e gönderebiliriz
       router.replace("/");
     } catch (error: any) {
       Alert.alert("Error", error.message || "Something went wrong.");
@@ -28,6 +34,7 @@ const SignIn = () => {
       setIsSubmitting(false);
     }
   };
+
   return (
     <View className="gap-10 bg-white rounded-lg p-5 mt-5">
       <CustomInput
@@ -44,7 +51,7 @@ const SignIn = () => {
           setform((prev) => ({ ...prev, password: text }))
         }
         label="Password"
-        secureTextEntry={true}
+        secureTextEntry
       />
       <CustomButton title="Sign In" isLoading={isSubmitting} onPress={submit} />
       <View className="flex justify-center mt-5 flex-row gap-2">
@@ -58,4 +65,5 @@ const SignIn = () => {
     </View>
   );
 };
+
 export default SignIn;
