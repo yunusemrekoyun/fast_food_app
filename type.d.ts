@@ -30,7 +30,7 @@ export interface CartCustomization {
 }
 
 export interface CartItemType {
-  id: string; 
+  id: string;
   name: string;
   price: number;
   image_url: string;
@@ -48,6 +48,36 @@ export interface CartStore {
   getTotalItems: () => number;
   getTotalPrice: () => number;
 }
+export interface Address extends Models.Document {
+  userId: string;
+  label: string;
+  fullName: string;
+  phone: string;
+  line1: string;
+  line2?: string | null;
+  city: string;
+  state?: string | null;
+  postalCode?: string | null;
+  country?: string | null;
+  isDefault: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type CreateAddressParams = Omit<
+  Address,
+  | "$id"
+  | "$collectionId"
+  | "$databaseId"
+  | "$createdAt"
+  | "$updatedAt"
+  | "$permissions"
+  | "$sequence"
+  | "userId"
+  | "isDefault"
+  | "createdAt"
+  | "updatedAt"
+> & { isDefault?: boolean };
 
 interface TabBarIconProps {
   focused: boolean;

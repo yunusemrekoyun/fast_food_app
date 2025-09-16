@@ -5,9 +5,11 @@ import {
   ID,
   Query,
   Storage,
+  Permission,
+  Role,
 } from "react-native-appwrite";
 import { CreateUserParams, SignInParams } from "@/type";
-import type { MenuItem, Category } from "@/type";
+import type { MenuItem, Category, Address, CreateAddressParams } from "@/type";
 
 export const appwriteConfig = {
   endpoint: process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT!,
@@ -20,6 +22,7 @@ export const appwriteConfig = {
   menuTableId: "menu",
   customizationsTableId: "customizations",
   menuCustomizationsTableId: "menu_customizations",
+  addressesTableId: "addresses",
 };
 
 export const client = new Client();
@@ -153,3 +156,151 @@ export const getCategories = async () => {
   );
   return res.documents;
 };
+
+async function getAccountId(): Promise<string> {
+  const acc = await account.get();
+  return acc.$id;
+}
+
+export async function createAddress(
+  data: CreateAddressParams
+): Promise<Address> {
+  const accountId = await getAccountId();
+
+  const payload = {
+    userId: accountId,
+    label: data.label,
+    fullName: data.fullName,
+    phone: data.phone,
+    line1: data.line1,
+    line2: data.line2 ?? "",
+    city: data.city,
+    state: data.state ?? "",
+    postalCode: data.postalCode ?? "",
+    country: data.country ?? "Türkiye",
+    isDefault: Boolean(data.isDefault),
+    // createdAt/updatedAt GÖNDERME!
+  };
+
+  const permissions = [
+    Permission.read(Role.user(accountId)),
+    Permission.update(Role.user(accountId)),
+    Permission.delete(Role.user(accountId)),
+  ];
+
+  const doc = await databases.createDocument<Address>(
+    appwriteConfig.databaseId,
+    appwriteConfig.addressesTableId,
+    ID.unique(),
+    payload,
+    permissions
+  );
+
+  return doc;
+}
+
+// Kullanıcının adreslerini listele (en yeniler üstte)
+export async function listMyAddresses(): Promise<Address[]> {
+  const accountId = await getAccountId();
+  const res = await databases.listDocuments<Address>(
+    appwriteConfig.databaseId,
+    appwriteConfig.addressesTableId,
+    [
+      Query.equal("userId", accountId),
+      Query.orderDesc("$createdAt"),
+      Query.limit(50),
+    ]
+  );
+  return res.documents;
+}
+
+// ----- ADDRESS HELPERS -----
+
+export type UpdateAddressParams = Partial<Omit<CreateAddressParams, "label">>;
+
+export async function updateAddress(
+  id: string,
+  data: UpdateAddressParams
+): Promise<Address> {
+  const payload: Record<string, any> = {
+    ...(data.fullName !== undefined && { fullName: data.fullName }),
+    ...(data.phone !== undefined && { phone: data.phone }),
+    ...(data.line1 !== undefined && { line1: data.line1 }),
+    ...(data.line2 !== undefined && { line2: data.line2 ?? "" }),
+    ...(data.city !== undefined && { city: data.city }),
+    ...(data.state !== undefined && { state: data.state ?? "" }),
+    ...(data.postalCode !== undefined && { postalCode: data.postalCode ?? "" }),
+    ...(data.country !== undefined && { country: data.country ?? "Türkiye" }),
+    // updatedAt GÖNDERME!
+  };
+
+  return databases.updateDocument<Address>(
+    appwriteConfig.databaseId,
+    appwriteConfig.addressesTableId,
+    id,
+    payload
+  );
+}
+export async function deleteAddress(addressId: string): Promise<void> {
+  await databases.deleteDocument(
+    appwriteConfig.databaseId,
+    appwriteConfig.addressesTableId,
+    addressId
+  );
+}
+
+/**
+ * Seçilen adresi varsayılan yapar.
+ * 1) Kullanıcının mevcut default adresini (varsa) isDefault=false yap
+ * 2) Hedef adresi isDefault=true yap
+ */
+
+export async function setDefaultAddress(addressId: string): Promise<void> {
+  const accountId = await getAccountId();
+
+  // mevcut default'ları kapat
+  const current = await databases.listDocuments<Address>(
+    appwriteConfig.databaseId,
+    appwriteConfig.addressesTableId,
+    [
+      Query.equal("userId", accountId),
+      Query.equal("isDefault", true),
+      Query.limit(50),
+    ]
+  );
+
+  await Promise.all(
+    current.documents
+      .filter((d) => d.$id !== addressId)
+      .map((d) =>
+        databases.updateDocument(
+          appwriteConfig.databaseId,
+          appwriteConfig.addressesTableId,
+          d.$id,
+          { isDefault: false } // updatedAt GÖNDERME!
+        )
+      )
+  );
+
+  // hedefi default yap
+  await databases.updateDocument(
+    appwriteConfig.databaseId,
+    appwriteConfig.addressesTableId,
+    addressId,
+    { isDefault: true } // updatedAt GÖNDERME!
+  );
+}
+/** En son seçilen default adresi getir (yoksa null) */
+export async function getMyDefaultAddress(): Promise<Address | null> {
+  const accountId = await getAccountId();
+  const res = await databases.listDocuments<Address>(
+    appwriteConfig.databaseId,
+    appwriteConfig.addressesTableId,
+    [
+      Query.equal("userId", accountId),
+      Query.equal("isDefault", true),
+      Query.limit(1),
+    ]
+  );
+  return res.documents[0] ?? null;
+}

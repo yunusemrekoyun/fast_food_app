@@ -5,15 +5,34 @@ import { Redirect, Tabs } from "expo-router";
 import React from "react";
 import { Image, View, Text } from "react-native";
 import cn from "clsx";
+import { Ionicons } from "@expo/vector-icons";
 
 const TabBarIcon = ({ focused, icon, title }: TabBarIconProps) => (
   <View className="tab-icon">
-    <Image
-      source={icon}
-      className="size-7"
-      resizeMode="contain"
-      tintColor={focused ? "#FE8C00" : "#5D5F6D"}
-    />
+    {icon ? (
+      <Image
+        source={icon}
+        className="size-7"
+        resizeMode="contain"
+        // @ts-ignore tintColor native prop RNImage için mevcut
+        tintColor={focused ? "#FE8C00" : "#5D5F6D"}
+      />
+    ) : (
+      // IKON YOKSA FALLBACK: HostFunction crash'ini önler
+      <Ionicons
+        name={
+          title === "Home"
+            ? "home-outline"
+            : title === "Search"
+              ? "search-outline"
+              : title === "Cart"
+                ? "cart-outline"
+                : "person-outline"
+        }
+        size={24}
+        color={focused ? "#FE8C00" : "#5D5F6D"}
+      />
+    )}
     <Text
       className={cn(
         "text-sm font-bold",
@@ -24,11 +43,11 @@ const TabBarIcon = ({ focused, icon, title }: TabBarIconProps) => (
     </Text>
   </View>
 );
+
 export default function TabLayout() {
   const { isAuthenticated } = useAuthStore();
-  if (!isAuthenticated) {
-    return <Redirect href="/sign-in" />;
-  }
+  if (!isAuthenticated) return <Redirect href="/sign-in" />;
+
   return (
     <Tabs
       screenOptions={{
@@ -49,38 +68,50 @@ export default function TabLayout() {
           shadowOpacity: 0.1,
           shadowRadius: 4,
           elevation: 5,
-        }, }}
+        },
+      }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: "Home",
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon title="Home" icon={images.home} focused={focused} />
+            <TabBarIcon title="Home" icon={images?.home} focused={focused} />
           ),
         }}
-      /> <Tabs.Screen
+      />
+      <Tabs.Screen
         name="search"
         options={{
           title: "Search",
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon title="Search" icon={images.search} focused={focused} />
+            <TabBarIcon
+              title="Search"
+              icon={images?.search}
+              focused={focused}
+            />
           ),
         }}
-      /> <Tabs.Screen
+      />
+      <Tabs.Screen
         name="cart"
         options={{
           title: "Cart",
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon title="Cart" icon={images.bag} focused={focused} />
+            <TabBarIcon title="Cart" icon={images?.bag} focused={focused} />
           ),
         }}
-      /> <Tabs.Screen
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon title="Profile" icon={images.person} focused={focused} />
+            <TabBarIcon
+              title="Profile"
+              icon={images?.person}
+              focused={focused}
+            />
           ),
         }}
       />

@@ -1,3 +1,4 @@
+// app/(tabs)/profile.tsx
 import React from "react";
 import {
   View,
@@ -39,6 +40,7 @@ const Profile = () => {
         <Text className="body-regular text-gray-200 mb-8 text-center">
           Please sign in or create an account to continue.
         </Text>
+
         <View className="flex-row gap-4">
           <TouchableOpacity
             className="bg-primary px-6 py-3 rounded-xl"
@@ -46,6 +48,7 @@ const Profile = () => {
           >
             <Text className="base-bold text-white">Sign In</Text>
           </TouchableOpacity>
+
           <TouchableOpacity
             className="border border-primary px-6 py-3 rounded-xl"
             onPress={() => router.push("/sign-up")}
@@ -57,21 +60,64 @@ const Profile = () => {
     );
   }
 
-  // Authenticated state
+  // ----- AUTHENTICATED VIEW -----
   return (
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView
-        contentContainerClassName="items-center px-6 py-10"
+        contentContainerClassName="px-6 py-8 pb-28"
         showsVerticalScrollIndicator={false}
       >
-        <Image
-          source={{ uri: user?.avatar || images.avatar }}
-          className="w-28 h-28 rounded-full mb-6"
-        />
-        <Text className="h2-bold text-dark-100">{user?.name}</Text>
-        <Text className="body-regular text-gray-200">{user?.email}</Text>
+        {/* User Card */}
+        <View className="w-full rounded-2xl bg-white border border-gray-200 p-5 shadow-sm">
+          <View className="flex-row items-center gap-4">
+            <Image
+              // user?.avatar bir URL ise uri ile, yoksa local fallback
+              source={
+                user?.avatar ? { uri: user.avatar } : (images.avatar as any)
+              }
+              className="w-20 h-20 rounded-full"
+              resizeMode="cover"
+            />
+            <View className="flex-1">
+              <Text className="h3-bold text-dark-100" numberOfLines={1}>
+                {user?.name}
+              </Text>
+              <Text className="body-regular text-gray-200" numberOfLines={1}>
+                {user?.email}
+              </Text>
+            </View>
+          </View>
 
-        <View className="w-full mt-10 gap-4">
+          {/* Quick actions */}
+          <View className="mt-5 border-t border-gray-200 pt-4 gap-3">
+            <TouchableOpacity
+              className="flex-row items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3"
+              onPress={() => router.push("/addresses")}
+            >
+              <View className="flex-row items-center gap-3">
+                <Image
+                  source={images.location}
+                  className="w-6 h-6"
+                  resizeMode="contain"
+                />
+                <View>
+                  <Text className="base-bold text-dark-100">Addresses</Text>
+                  <Text className="small-regular text-gray-200">
+                    Manage your delivery addresses
+                  </Text>
+                </View>
+              </View>
+              <Image
+                source={images.arrowRight}
+                className="w-5 h-5 opacity-70"
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Danger / Other */}
+        <View className="w-full mt-6">
           <TouchableOpacity
             className="bg-primary px-6 py-4 rounded-xl"
             onPress={handleLogout}

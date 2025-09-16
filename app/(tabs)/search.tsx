@@ -3,7 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import useAppwrite from "@/lib/useAppwrite";
 import { getCategories, getMenu } from "@/lib/appwrite";
 import { useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import CartButton from "@/components/CartButton";
 import cn from "clsx";
 import MenuCard from "@/components/MenuCard";
@@ -12,25 +12,39 @@ import Filter from "@/components/Filter";
 import SearchBar from "@/components/SearchBar";
 import MenuDetailModal from "@/components/MenuDetailModal";
 
-const Search = () => {
+export default function Search() {
   const { category, query } = useLocalSearchParams<{
-    query: string;
-    category: string;
+    query?: string;
+    category?: string;
   }>();
 
-  const { data, refetch, loading } = useAppwrite<MenuItem[], any>({
+  // NOT: useAppwrite dönen tip OBJE olmak zorunda (data, refetch, loading)
+  const {
+    data = [],
+    refetch,
+    loading = false,
+  } = useAppwrite<MenuItem[], any>({
     fn: getMenu,
-    params: { category, query, limit: 6 },
-  });
-  const { data: categories } = useAppwrite({ fn: getCategories });
+    params: { category: category ?? "", query: query ?? "", limit: 6 },
+  }) || ({} as any);
+
+  const { data: categories = [] } =
+    useAppwrite<{ $id: string; name: string }[], any>({
+      fn: getCategories,
+    }) || ({} as any);
 
   const [selected, setSelected] = useState<MenuItem | null>(null);
   const [open, setOpen] = useState(false);
 
+  // refetch güvenli çağrı
   useEffect(() => {
-    refetch({ category, query, limit: 6 });
+    if (typeof refetch === "function") {
+      refetch({ category: category ?? "", query: query ?? "", limit: 6 });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, query]);
+
+  const listData = useMemo(() => (Array.isArray(data) ? data : []), [data]);
 
   const openDetail = (item: MenuItem) => {
     setSelected(item);
@@ -40,24 +54,18 @@ const Search = () => {
   return (
     <SafeAreaView className="bg-white h-full">
       <FlatList
-        data={data || []}
+        data={listData}
         renderItem={({ item, index }) => {
-          const isFirstRightColItem = index % 2 === 0;
+          const isRightCol = index % 2 === 1;
           return (
-            <View
-              className={cn(
-                "flex-1 max-w-[48%]",
-                !isFirstRightColItem ? "mt-10" : "mt-0"
-              )}
-            >
-              <MenuCard
-                item={item as MenuItem}
-                onPress={() => openDetail(item as MenuItem)}
-              />
+            <View className={cn("flex-1 max-w-[48%]", isRightCol && "mt-10")}>
+              <MenuCard item={item} onPress={() => openDetail(item)} />
             </View>
           );
         }}
-        keyExtractor={(item) => item.$id}
+        keyExtractor={(item, idx) =>
+          item?.$id ? String(item.$id) : String(idx)
+        }
         numColumns={2}
         columnWrapperClassName="gap-7"
         contentContainerClassName="gap-7 px-5 pb-32"
@@ -77,10 +85,12 @@ const Search = () => {
               <CartButton />
             </View>
             <SearchBar />
-            <Filter categories={categories || []} />
+            <Filter categories={categories} />
           </View>
         )}
-        ListEmptyComponent={() => !loading && <Text>No results</Text>}
+        ListEmptyComponent={() =>
+          !loading ? <Text className="px-5">No results</Text> : null
+        }
       />
 
       <MenuDetailModal
@@ -90,6 +100,4 @@ const Search = () => {
       />
     </SafeAreaView>
   );
-};
-
-export default Search;
+}
